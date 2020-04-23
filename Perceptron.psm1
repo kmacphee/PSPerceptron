@@ -12,18 +12,16 @@ class Perceptron {
     hidden [double] $LearningRate   = 0.01
     # The seed for the random number generator used to initialize the weights vector.
     hidden [int]    $RandomSeed     = 1
-
+    
     # The default constructor just uses the default values of properties.
-    Perceptron() {
-
-    }
-
+    Perceptron() {}
+    
     Perceptron([double] $LearningRate, [int] $Epochs, [int] $RandomSeed) {
         $this.LearningRate = $LearningRate
         $this.Epochs = $Epochs
         $this.RandomSeed = $RandomSeed
     }
-
+    
     # Trains the Perceptron with the given sample matrix and vector (array) of target
     # class labels. The target class labels are the labels that the Perceptron needs
     # to learn to classify when given unlabelled data after training. Training involves
@@ -41,17 +39,17 @@ class Perceptron {
         if ($numFeatures -le 1) {
             throw "No feature values provided in training samples."
         }
-
+        
         # Create the vector (array) of weight coefficients for the number of features
         # in the sample. Initialize the weight values with random numbers that are
         # close to the decision boundary (0.0).
         $this.Weights = New-Object -TypeName "double[]" -ArgumentList $numFeatures
-        Get-Random -SetSeed $this.RandomSeed | Out-Null
+        $null = Get-Random -SetSeed $this.RandomSeed
         for ($i = 0; $i -lt $this.Weights.length; $i++) {
             $this.Weights[$i] = Get-Random -Minimum -0.01 -Maximum 0.01  
         }
-
-        $this.ErrorsPerEpoch = @()
+        
+        $this.ErrorsPerEpoch = [System.Collections.Generic.List[int]]::new()
         # For each epoch (pass over the dataset).
         for ($i = 0; $i -lt $this.Epochs; $i++) {
             $errors = 0
@@ -63,9 +61,9 @@ class Perceptron {
                 for ($k = 0; $k -lt $numFeatures; $k++) {
                     $sample[$k] = $Samples[$j, $k]
                 }
-
+                
                 $target = $Targets[$j]
-
+                
                 # Attempt to classify the sample and compare the result to the target
                 # value to produce an update value. If 'result' equals 'target' (i.e.
                 # we classified the sample correctly), 'target' minus 'result' will
@@ -75,13 +73,13 @@ class Perceptron {
                 # depending on what the result should have been.
                 $result = $this.Classify($sample)
                 $update = $this.LearningRate * ($target - $result)
-
+                
                 # Update all weight coefficients and the bias value.
                 for ($k = 0; $k -lt $this.Weights.length; $k++) {
                     $this.Weights[$k] += ($update * $sample[$k])
                 }
                 $this.BiasValue += $update
-
+                
                 if ($update -ne 0) {
                     $errors++
                 }
@@ -89,10 +87,10 @@ class Perceptron {
             # Keep track of the number of misclassifications in each epoch. If the
             # perceptron is learning correctly this number should reduce over the
             # total number of epochs.
-            $this.ErrorsPerEpoch += $errors
+            $this.ErrorsPerEpoch.Add($errors)
         }
     }
-
+    
     # The decision function of the Perceptron. If the net input of the sample is
     # greater than 0.0 it will return one class label, otherwise it will return
     # the other.
@@ -100,7 +98,7 @@ class Perceptron {
         if ($this.getNetInput($Sample) -gt 0.0) {
             return 1
         }
-
+        
         return 0
     }
 
@@ -112,12 +110,12 @@ class Perceptron {
         if ($Sample.length -ne $this.Weights.length) {
             throw "Invalid number of features in the sample."
         }
-
+        
         $dotProduct = 0.0
         for ($i = 0; $i -lt $Sample.length; $i++) {
             $dotProduct += ($Sample[$i] * $this.Weights[$i])
         }
-
+        
         return $dotProduct + $this.BiasValue
     }
 }
